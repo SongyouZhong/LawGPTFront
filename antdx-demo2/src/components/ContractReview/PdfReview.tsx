@@ -1,35 +1,35 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Upload, Button } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { PdfLoader, PdfHighlighter, Popup, Highlight } from 'react-pdf-highlighter';
+import {
+  PdfLoader,
+  PdfHighlighter,
+  Popup,
+  Highlight,
+  IHighlight,
+} from 'react-pdf-highlighter';
 import 'react-pdf-highlighter/dist/style.css';
 
-interface HighlightType {
-  id: string;
-  position: any;
-  content: any;
-  comment: string;
-}
-
 const PdfReview: React.FC = () => {
-  // 存储上传后的 PDF 文件 URL
+  // 保存上传的 PDF 文件 URL
   const [pdfFile, setPdfFile] = useState<string | null>(null);
-  // 存储用户添加的高亮和批注
-  const [highlights, setHighlights] = useState<HighlightType[]>([]);
+  // 使用 react-pdf-highlighter 的原生 IHighlight 类型保存所有高亮和批注
+  const [highlights, setHighlights] = useState<IHighlight[]>([]);
+  // 用于保存滚动容器的引用
+  const scrollViewerTo = useRef<(highlight: IHighlight) => void>(() => {});
 
-  // 处理文件上传变化，使用 antd 的 Upload 组件
+  // 处理文件上传变化，状态变为 done 后获取文件 URL
   const onFileChange = (info: any) => {
-    // 这里简单处理：当文件上传状态为 done 后读取文件对象
     if (info.file.status === 'done') {
-      // 使用 URL.createObjectURL 将文件转换为本地 URL
       const fileUrl = URL.createObjectURL(info.file.originFileObj);
       setPdfFile(fileUrl);
     }
   };
 
-  // 添加新的高亮批注
-  const addHighlight = (highlight: HighlightType) => {
-    setHighlights((prev) => [...prev, highlight]);
+  // 添加新的高亮和批注（注意：此处传入的 highlight 不包含 id）
+  const addHighlight = (highlight: Omit<IHighlight, 'id'>) => {
+    const newHighlight: IHighlight = { ...highlight, id: String(Math.random()) };
+    setHighlights((prev) => [...prev, newHighlight]);
   };
 
   return (
@@ -37,7 +37,7 @@ const PdfReview: React.FC = () => {
       {/* 上传 PDF 按钮 */}
       <Upload
         onChange={onFileChange}
-        beforeUpload={() => true} // 允许直接上传文件（这里不做额外的上传处理）
+        beforeUpload={() => true} // 允许直接上传文件
         showUploadList={false}
       >
         <Button icon={<UploadOutlined />}>上传 PDF</Button>
@@ -48,26 +48,33 @@ const PdfReview: React.FC = () => {
         <div style={{ height: '80vh', border: '1px solid #eee', marginTop: 16 }}>
           <PdfLoader url={pdfFile} beforeLoad={<div>加载中...</div>}>
             {(pdfDocument) => (
-              <PdfHighlighter
+              <PdfHighlighter<IHighlight>
                 pdfDocument={pdfDocument}
-                // 当按住 Alt 键时允许区域选择（可自定义触发条件）
                 enableAreaSelection={(event) => event.altKey}
-                // 已有的高亮批注数组
                 highlights={highlights}
-                // 当用户完成文本选择后展示“添加批注”按钮
+                // 补充缺少的 onScrollChange 和 scrollRef 属性
+                onScrollChange={() => {}}
+                scrollRef={(scrollTo) => {
+                  scrollViewerTo.current = scrollTo;
+                }}
+                // 用户完成选择后触发，展示“添加批注”按钮
                 onSelectionFinished={(position, content, hideTipAndSelection) => (
-                  <div style={{ background: 'white', padding: '8px', borderRadius: '4px' }}>
+                  <div
+                    style={{
+                      background: 'white',
+                      padding: '8px',
+                      borderRadius: '4px',
+                    }}
+                  >
                     <Button
                       type="primary"
                       onClick={() => {
-                        const newHighlight: HighlightType = {
-                          id: String(Math.random()),
+                        // 新建高亮对象，注意 comment 字段需符合 { text, emoji } 结构
+                        addHighlight({
                           position,
                           content,
-                          comment: '新批注', // 这里可以扩展为弹出输入框，让用户输入批注内容
-                        };
-                        addHighlight(newHighlight);
-                        // 隐藏提示和选择区域
+                          comment: { text: '新批注', emoji: '💬' },
+                        });
                         hideTipAndSelection();
                       }}
                     >
@@ -75,15 +82,22 @@ const PdfReview: React.FC = () => {
                     </Button>
                   </div>
                 )}
-                // 渲染每个高亮区域，鼠标悬停时显示批注内容
+                // 自定义渲染每个高亮区域，当鼠标悬停时显示批注
                 highlightTransform={(highlight, index, setTip, hideTip) => (
                   <Popup
                     key={index}
-                    popupContent={<div>{highlight.comment}</div>}
-                    onMouseOver={() => setTip(highlight)}
+                    popupContent={<div>{highlight.comment.text}</div>}
+                    onMouseOver={() =>
+                      // setTip 的第二个参数需返回一个 React 元素
+                      setTip(highlight, () => <div></div>)
+                    }
                     onMouseOut={hideTip}
                   >
-                    <Highlight isScrolledTo={false} position={highlight.position} />
+                    <Highlight
+                      isScrolledTo={false}
+                      position={highlight.position}
+                      comment={highlight.comment}
+                    />
                   </Popup>
                 )}
               />
