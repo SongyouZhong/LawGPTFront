@@ -5,12 +5,14 @@ import {  Button} from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import useMenuStyles from './useMenuStyles';
 import RenderTitle from '../common/RenderTitle';
-
+import Settings from '../Settings/Settings';
+import ContractReview from '../ContractReview/ContractReview';
 interface MenuProps {
   conversationsItems: any[]; // 根据实际类型定义
   onAddConversation: () => void;
   activeKey: string;
   onConversationClick: (key: string) => void;
+  onContractReview: () => void; // 新增：合同审核回调
 }
 
 const Menu: React.FC<MenuProps> = ({
@@ -18,6 +20,7 @@ const Menu: React.FC<MenuProps> = ({
   onAddConversation,
   activeKey,
   onConversationClick,
+  onContractReview,
 }) => {
   const { styles } = useMenuStyles();
 
@@ -36,6 +39,10 @@ const Menu: React.FC<MenuProps> = ({
     <div className={styles.menu}>
       {/* 🌟 Logo */}
       {logoNode}
+      {/* 使用独立的 Settings 组件 */}
+      {/* <Settings /> */}
+       {/* 新增：合同审核按钮 */}
+       <ContractReview onActivate={onContractReview} />
       {/* 🌟 添加会话 */}
       <Button
         onClick={onAddConversation}

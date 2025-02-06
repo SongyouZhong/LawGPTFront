@@ -115,6 +115,8 @@ const Independent: React.FC = () => {
 
   const [headerOpen, setHeaderOpen] = React.useState(false);
 
+   // 新增：合同审核模式状态，false 表示聊天模式，true 表示合同审核模式
+   const [contractReviewMode, setContractReviewMode] = React.useState(false);
   // ==================== Hooks ====================
   const { onRequest, messages, setMessages } = useChatHook();
 
@@ -122,6 +124,7 @@ const Independent: React.FC = () => {
   useEffect(() => {
     if (activeKey !== undefined) {
       setMessages([]);
+      setContractReviewMode(false);
     }
   }, [activeKey, setMessages]);
 
@@ -155,8 +158,19 @@ const Independent: React.FC = () => {
     setAttachedFiles(info.fileList);
   };
 
+  // 点击合同审核按钮后切换到合同审核模式
+  const handleContractReview = () => {
+    setContractReviewMode(true);
+  };
   // ==================== Placeholder Node ====================
-  const placeholderNode = (
+  const placeholderNode = contractReviewMode ? (
+    <div style={{ padding: 24 }}>
+      <h2>合同审核</h2>
+      <p>请上传需要审核的合同文件：</p>
+      {/* 你可以在这里集成 antd 的 Upload 组件 */}
+      <Button type="primary">上传文件</Button>
+    </div>
+  ) : (
     <Space direction="vertical" size={16}>
       <Welcome
         variant="borderless"
@@ -173,14 +187,7 @@ const Independent: React.FC = () => {
       <Prompts
         title="Do you want?"
         items={placeholderPromptsItems}
-        styles={{
-          list: {
-            width: '100%',
-          },
-          item: {
-            flex: 1,
-          },
-        }}
+        styles={{ list: { width: '100%' }, item: { flex: 1 } }}
         onItemClick={onPromptsItemClick}
       />
     </Space>
@@ -205,6 +212,7 @@ const Independent: React.FC = () => {
       placeholderNode={placeholderNode}
       roles={roles}
       loading={false} // 根据实际情况传递
+      onContractReview={handleContractReview}
     />
   );
 };

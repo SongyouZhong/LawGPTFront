@@ -27,6 +27,7 @@ interface LayoutProps {
   placeholderNode: React.ReactNode;
   roles: any; // 根据实际类型定义
   loading: boolean;
+  onContractReview: () => void;
 }
 
 const Layout: React.FC<LayoutProps> = ({
@@ -47,6 +48,7 @@ const Layout: React.FC<LayoutProps> = ({
   placeholderNode,
   roles,
   loading,
+  onContractReview,
 }) => {
   const { styles } = useLayoutStyles();
 
@@ -57,6 +59,7 @@ const Layout: React.FC<LayoutProps> = ({
         onAddConversation={onAddConversation}
         activeKey={activeKey}
         onConversationClick={onConversationClick}
+        onContractReview={onContractReview}
       />
       <Chat
         messages={messages}
