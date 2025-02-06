@@ -25,6 +25,7 @@ import { Badge, Button, Space } from 'antd';
 import RenderTitle from './components/common/RenderTitle';
 import Layout from './components/Layout/Layout';
 import useChatHook from './hooks/useChat';
+import PdfReview from './components/ContractReview/PdfReview';
 
 const defaultConversationsItems = [
   {
@@ -164,12 +165,7 @@ const Independent: React.FC = () => {
   };
   // ==================== Placeholder Node ====================
   const placeholderNode = contractReviewMode ? (
-    <div style={{ padding: 24 }}>
-      <h2>合同审核</h2>
-      <p>请上传需要审核的合同文件：</p>
-      {/* 你可以在这里集成 antd 的 Upload 组件 */}
-      <Button type="primary">上传文件</Button>
-    </div>
+    <PdfReview />
   ) : (
     <Space direction="vertical" size={16}>
       <Welcome
