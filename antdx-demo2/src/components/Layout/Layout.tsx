@@ -1,45 +1,19 @@
-
-// src/components/Layout/Layout.tsx
 import React from 'react';
 import { Menu } from 'antd';
 import { MailOutlined, AppstoreOutlined, SettingOutlined } from '@ant-design/icons';
-import MenuCustom from '../Menu/Menu';
-import Chat from '../Chat/Chat';
+import { Outlet, Link } from 'react-router-dom';
 import useLayoutStyles from './useLayoutStyles';
-
-
-interface LayoutProps {
-  // 传递必要的props
-  conversationsItems: any[]; // 根据实际类型定义
-  onAddConversation: () => void;
-  activeKey: string;
-  onConversationClick: (key: string) => void;
-  messages: any[]; // 根据实际类型定义
-  onRequest: (message: string) => void;
-  content: string;
-  setContent: (value: string) => void;
-  attachedFiles: any[]; // 根据实际类型定义
-  headerOpen: boolean;
-  setHeaderOpen: (open: boolean) => void;
-  handleFileChange: (info: any) => void; // 根据实际类型定义
-  senderPromptsItems: any[]; // 根据实际类型定义
-  onPromptsItemClick: (info: any) => void; // 根据实际类型定义
-  placeholderNode: React.ReactNode;
-  roles: any; // 根据实际类型定义
-  loading: boolean;
-  onContractReview: () => void;
-}
 
 const topMenuItems = [
   {
-    key: 'mail',
+    key: 'home',
     icon: <MailOutlined />,
-    label: '首页',
+    label: <Link to="/">首页</Link>,
   },
   {
-    key: 'app',
+    key: 'contractReview',
     icon: <AppstoreOutlined />,
-    label: '合同审查',
+    label: <Link to="/contract-review">合同审查</Link>,
   },
   {
     key: 'submenu',
@@ -52,33 +26,11 @@ const topMenuItems = [
   },
 ];
 
-const Layout: React.FC<LayoutProps> = (props) => {
-  const {
-    conversationsItems,
-    onAddConversation,
-    activeKey,
-    onConversationClick,
-    messages,
-    onRequest,
-    content,
-    setContent,
-    attachedFiles,
-    headerOpen,
-    setHeaderOpen,
-    handleFileChange,
-    senderPromptsItems,
-    onPromptsItemClick,
-    placeholderNode,
-    roles,
-    loading,
-    onContractReview,
-  } = props;
-  
+const Layout: React.FC = () => {
   const { styles } = useLayoutStyles();
 
   return (
     <div className={styles.layout}>
-      {/* 顶部导航菜单 */}
       <header className={styles.header}>
         <div className={styles.logo}>
           <img
@@ -86,35 +38,13 @@ const Layout: React.FC<LayoutProps> = (props) => {
             draggable={false}
             alt="logo"
           />
-        <span>Ant Design X</span>
-      </div>
+          <span>Ant Design X</span>
+        </div>
         <Menu mode="horizontal" items={topMenuItems} />
       </header>
-
-      {/* 主体内容区域 */}
       <div className={styles.body}>
-        <MenuCustom
-          conversationsItems={conversationsItems}
-          onAddConversation={onAddConversation}
-          activeKey={activeKey}
-          onConversationClick={onConversationClick}
-          onContractReview={onContractReview}
-        />
-        <Chat
-          messages={messages}
-          onRequest={onRequest}
-          content={content}
-          setContent={setContent}
-          attachedFiles={attachedFiles}
-          headerOpen={headerOpen}
-          setHeaderOpen={setHeaderOpen}
-          handleFileChange={handleFileChange}
-          senderPromptsItems={senderPromptsItems}
-          onPromptsItemClick={onPromptsItemClick}
-          placeholderNode={placeholderNode}
-          roles={roles}
-          loading={loading}
-        />
+        {/* 核心：Outlet 用来渲染子路由页面 */}
+        <Outlet />
       </div>
     </div>
   );
