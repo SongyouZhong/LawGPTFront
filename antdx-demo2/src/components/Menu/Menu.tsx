@@ -24,21 +24,21 @@ const Menu: React.FC<MenuProps> = ({
 }) => {
   const { styles } = useMenuStyles();
 
-  const logoNode = (
-    <div className={styles.logo}>
-      <img
-        src="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*eco6RrQhxbMAAAAAAAAAAAAADgCCAQ/original"
-        draggable={false}
-        alt="logo"
-      />
-      <span>Ant Design X</span>
-    </div>
-  );
+  // const logoNode = (
+  //   <div className={styles.logo}>
+  //     <img
+  //       src="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*eco6RrQhxbMAAAAAAAAAAAAADgCCAQ/original"
+  //       draggable={false}
+  //       alt="logo"
+  //     />
+  //     <span>Ant Design X</span>
+  //   </div>
+  // );
 
   return (
     <div className={styles.menu}>
       {/* 🌟 Logo */}
-      {logoNode}
+      {/* {logoNode} */}
       {/* 使用独立的 Settings 组件 */}
       {/* <Settings /> */}
        {/* 新增：合同审核按钮 */}
