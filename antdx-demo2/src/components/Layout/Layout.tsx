@@ -39,7 +39,7 @@ const topMenuItems = [
   {
     key: 'app',
     icon: <AppstoreOutlined />,
-    label: '功能',
+    label: '合同审查',
   },
   {
     key: 'submenu',
