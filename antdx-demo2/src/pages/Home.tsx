@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import React, { useState, useEffect } from 'react';
 import MenuCustom from '../components/Menu/Menu'; // 侧边对话列表组件
 import Chat from '../components/Chat/Chat';       // 聊天组件
@@ -17,6 +16,7 @@ import RenderTitle from '../components/common/RenderTitle';
 import PdfReview from '../components/ContractReview/PdfReview';
 import useChatHook from '../hooks/useChat';
 
+// 默认值可暂时保留，接口加载后会覆盖
 const defaultConversationsItems = [
   { key: '0', label: 'What is Ant Design X?' },
 ];
@@ -85,22 +85,55 @@ const roles = {
 
 const Home: React.FC = () => {
   // ==================== State ====================
+  // 对话列表数据
   const [conversationsItems, setConversationsItems] = useState(defaultConversationsItems);
   const [activeKey, setActiveKey] = useState('0'); 
   const [content, setContent] = useState('');
   const [attachedFiles, setAttachedFiles] = useState([]);
   const [headerOpen, setHeaderOpen] = useState(false);
-
-  //  是否切换到合同审核模式（如果你还有这个需求）
+  // 是否切换到合同审核模式（如果你还有这个需求）
   const [contractReviewMode, setContractReviewMode] = useState(false);
 
   // ==================== Hooks ====================
-  // 这里是你自定义的聊天 hook
+  // 自定义聊天 hook
   const { onRequest, messages, setMessages } = useChatHook();
 
-  // ==================== Effects ====================
+  // ==================== 获取会话列表 ====================
   useEffect(() => {
-    // 切换对话后，清空消息并回到聊天模式
+    async function fetchConversations() {
+      const apiKey = 'app-SQpOipvZ9uVJSLAf0h76HhQ0'; // 请替换为实际的 API-Key
+      const userId = 'USER_ID_123';      // 请替换为实际的用户标识
+      try {
+        const response = await fetch(`http://localhost/v1/conversations?user=${userId}`, {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        const result = await response.json();
+        if (result.data) {
+          // 将返回的会话列表转换为 Conversations 组件所需格式（至少 key 和 label 字段）
+          const items = result.data.map((conv: any) => ({
+            key: conv.id,
+            label: conv.name, // 这里默认使用后端返回的 name 作为会话名称
+          }));
+          setConversationsItems(items);
+          // 可选：将第一个会话设为 activeKey
+          if (items.length > 0) {
+            setActiveKey(items[0].key);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching conversations:', error);
+      }
+    }
+    fetchConversations();
+  }, []); // 组件挂载时调用一次
+
+  // ==================== Effects ====================
+  // 切换对话后，清空消息并回到聊天模式
+  useEffect(() => {
     setMessages([]);
     setContractReviewMode(false);
   }, [activeKey, setMessages]);
@@ -117,6 +150,7 @@ const Home: React.FC = () => {
   };
 
   const onAddConversation = () => {
+    // 如果需要新增会话后，还需要调用后端接口创建会话，这里仅作为前端演示
     setConversationsItems((prev) => [
       ...prev,
       {
@@ -169,10 +203,7 @@ const Home: React.FC = () => {
   // ==================== Render ====================
   return (
     <div style={{ display: 'flex', height: '100%' }}>
-      {/* 
-        左侧：对话列表 + 新对话按钮 
-        (原先在 Layout 或 Independent.tsx 里的逻辑)
-      */}
+      {/* 左侧：对话列表 + 新对话按钮 */}
       <MenuCustom
         conversationsItems={conversationsItems}
         onAddConversation={onAddConversation}
@@ -180,9 +211,7 @@ const Home: React.FC = () => {
         onConversationClick={onConversationClick}
       />
 
-      {/* 
-        右侧：聊天面板 
-      */}
+      {/* 右侧：聊天面板 */}
       <Chat
         messages={messages}
         onRequest={onSubmit}
