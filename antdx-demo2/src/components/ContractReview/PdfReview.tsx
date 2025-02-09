@@ -1,122 +1,55 @@
-import React, { useState, useRef } from 'react';
-import { Upload, Button, Drawer } from 'antd';
+import React, { useState } from 'react';
+import { Upload, Button } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import {
-  PdfLoader,
-  PdfHighlighter,
-  Popup,
-  Highlight,
-  IHighlight,
-} from 'react-pdf-highlighter';
-import 'react-pdf-highlighter/dist/style.css';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+// import 'antd/dist/antd.css';
+import type { RcFile } from 'antd/es/upload';
+// 配置 pdfjs worker（注意 workerSrc 路径可能需根据项目实际情况调整）
+// pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `/pdfjs/build/pdf.worker.mjs`;
 
-const PdfReview: React.FC = () => {
-  const [pdfFile, setPdfFile] = useState<string | null>(null);
-  const [drawerVisible, setDrawerVisible] = useState<boolean>(false);
-  const [highlights, setHighlights] = useState<IHighlight[]>([]);
-  const scrollViewerTo = useRef<(highlight: IHighlight) => void>(() => {});
 
-  const onFileChange = (info: any) => {
-    console.log("上传信息：", info);
-    // 尝试从 info.file.originFileObj 获取文件对象
-    const fileObj =
-      info.file.originFileObj ||
-      (info.fileList && info.fileList[0] && info.fileList[0].originFileObj);
-    if (fileObj) {
-      const fileUrl = URL.createObjectURL(fileObj);
-      console.log("生成的 URL：", fileUrl);
-      setPdfFile(fileUrl);
-      setDrawerVisible(true); // 文件上传成功后打开抽屉
-    } else {
-      console.log("未获取到文件对象");
-    }
+const PdfUploaderViewer = () => {
+  // 保存上传的文件对象
+  const [pdfFile, setPdfFile] = useState<RcFile | null>(null);
+  // 保存 PDF 页数
+  const [numPages, setNumPages] = useState<number | null>(null);
+
+  // 上传之前，阻止自动上传行为，直接将文件保存到 state 中
+  const beforeUpload = (file : RcFile) => {
+    // 这里可以加入对文件类型和大小的校验
+    setPdfFile(file);
+    // 返回 false 阻止 antd 组件自动上传
+    return false;
   };
 
-  // 添加新的高亮和批注
-  const addHighlight = (highlight: Omit<IHighlight, 'id'>) => {
-    const newHighlight: IHighlight = { ...highlight, id: String(Math.random()) };
-    setHighlights((prev) => [...prev, newHighlight]);
+  // PDF 加载成功后回调
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
   };
+  
 
   return (
-    <div>
-      <Upload
-        onChange={onFileChange}
-        beforeUpload={() => false} // 阻止自动上传
-        showUploadList={false}
-      >
-        <Button icon={<UploadOutlined />}>上传 PDF</Button>
+    <div style={{ padding: '20px' }}>
+      {/* 上传组件 */}
+      <Upload beforeUpload={beforeUpload} showUploadList={false}>
+        <Button icon={<UploadOutlined />}>点击上传 PDF 文件</Button>
       </Upload>
 
-      <Drawer
-        title="PDF Review"
-        placement="right"
-        onClose={() => setDrawerVisible(false)}
-        visible={drawerVisible}
-        width="80vw" // 你可以根据需求调整宽度
-        destroyOnClose
-      >
-        {pdfFile ? (
-          <div style={{ height: '80vh', border: '1px solid #eee' }}>
-            <PdfLoader url={pdfFile} beforeLoad={<div>加载中...</div>}>
-              {(pdfDocument) => (
-                <PdfHighlighter<IHighlight>
-                  pdfDocument={pdfDocument}
-                  enableAreaSelection={(event) => event.altKey}
-                  highlights={highlights}
-                  onScrollChange={() => {}}
-                  scrollRef={(scrollTo) => {
-                    scrollViewerTo.current = scrollTo;
-                  }}
-                  onSelectionFinished={(position, content, hideTipAndSelection) => (
-                    <div
-                      style={{
-                        background: 'white',
-                        padding: '8px',
-                        borderRadius: '4px',
-                      }}
-                    >
-                      <Button
-                        type="primary"
-                        onClick={() => {
-                          addHighlight({
-                            position,
-                            content,
-                            comment: { text: '新批注', emoji: '💬' },
-                          });
-                          hideTipAndSelection();
-                        }}
-                      >
-                        添加批注
-                      </Button>
-                    </div>
-                  )}
-                  highlightTransform={(highlight, index, setTip, hideTip) => (
-                    <Popup
-                      key={index}
-                      popupContent={<div>{highlight.comment.text}</div>}
-                      onMouseOver={() =>
-                        setTip(highlight, () => <div></div>)
-                      }
-                      onMouseOut={hideTip}
-                    >
-                      <Highlight
-                        isScrolledTo={false}
-                        position={highlight.position}
-                        comment={highlight.comment}
-                      />
-                    </Popup>
-                  )}
-                />
-              )}
-            </PdfLoader>
-          </div>
-        ) : (
-          <p>当前没有上传 PDF 文件</p>
-        )}
-      </Drawer>
+      {/* PDF 展示区域 */}
+      {pdfFile && (
+        <div style={{ marginTop: '20px' }}>
+          <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
+            {Array.from(new Array(numPages), (el, index) => (
+              <Page key={`page_${index + 1}`} pageNumber={index + 1} />
+            ))}
+          </Document>
+        </div>
+      )}
     </div>
   );
 };
 
-export default PdfReview;
+export default PdfUploaderViewer;
