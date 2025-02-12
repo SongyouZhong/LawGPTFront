@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, Button, message } from 'antd';
+import { Upload, Button, message, Skeleton  } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { RcFile } from 'antd/es/upload/interface';
 import ReactMarkdown from 'react-markdown';
@@ -167,6 +167,7 @@ const PdfUploaderViewer = () => {
               borderRight: '1px solid #ccc',
               paddingRight: '20px',
               overflowY: 'auto',
+              minWidth: '45%'
             }}
           >
             <h2>{pdfFile.name}</h2>
@@ -187,20 +188,24 @@ const PdfUploaderViewer = () => {
               flex: 1,
               paddingLeft: '20px',
               overflowY: 'auto',
+              minWidth: '45%'
             }}
           >
             <h3>审核信息反馈</h3>
-            <div
-              style={{
-                whiteSpace: 'pre-wrap',
-                wordWrap: 'break-word',
-                overflowY: 'auto',
-                height: '70vh',
-              }}
-            >
-              <h4>总体审查</h4>
-              <ReactMarkdown>{totalCheck}</ReactMarkdown>
-            </div>
+            {totalCheck ? (
+              <div
+                style={{
+                  whiteSpace: 'pre-wrap',
+                  wordWrap: 'break-word',
+                  overflowY: 'auto',
+                  height: '70vh',
+                }}
+              >
+                <h4>总体审查</h4>
+                <ReactMarkdown>{totalCheck}</ReactMarkdown>
+              </div>
+            ) : (
+              <Skeleton active paragraph={{ rows: 10 }} />)}
           </div>
         </div>
       )}
