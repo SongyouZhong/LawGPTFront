@@ -144,30 +144,79 @@ const PdfUploaderViewer = () => {
   };
 
   return (
-    <div style={{ padding: '20px' }}>
+    <div style={{ padding: "20px" }}>
       {!pdfFile && (
-        <Upload beforeUpload={beforeUpload} showUploadList={false}>
-          <Button icon={<UploadOutlined />}>点击上传 PDF 文件</Button>
-        </Upload>
+        <div style={{ padding: "40px", textAlign: "center" }}>
+          {/* 顶部标题 */}
+          <div>
+            <h1 style={{ fontSize: "24px", fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
+              <span style={{ background: "#4CAF50", color: "#fff", padding: "5px 10px", borderRadius: "50%" }}>📄</span>
+              合同审查
+            </h1>
+            <p style={{ color: "#666", fontSize: "16px" }}>精准又详细的合同审查</p>
+          </div>
+  
+          {/* 上传区域 */}
+          <div
+            style={{
+              marginTop: "30px",
+              background: "#f8fafd",
+              padding: "40px",
+              borderRadius: "8px",
+              border: "1px solid #e0e0e0",
+              maxWidth: "600px",
+              marginLeft: "auto",
+              marginRight: "auto",
+              textAlign: "center",
+            }}
+          >
+            <Upload beforeUpload={beforeUpload} showUploadList={false}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: "pointer",
+                  padding: "20px",
+                  borderRadius: "8px",
+                  background: "#fff",
+                  border: "1px dashed #d9d9d9",
+                  width: "100%",
+                }}
+              >
+                <UploadOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
+                <p style={{ marginTop: "10px", fontSize: "16px", color: "#333" }}>
+                  点击上传或拖拽合同文件至此处
+                </p>
+                <p style={{ fontSize: "14px", color: "#888" }}>
+                  目前仅支持 PDF，文件最大不超过 10M
+                </p>
+              </div>
+            </Upload>
+  
+          </div>
+        </div>
       )}
-
+  
       {pdfFile && (
         <div
           style={{
-            display: 'flex',
-            marginTop: '20px',
-            height: '80vh',
+            display: "flex",
+            marginTop: "20px",
+            height: "80vh",
+            justifyContent: "space-between",
           }}
         >
           {/* 左侧展示 PDF 内容 */}
           <div
             style={{
               flex: 1,
-              marginRight: '20px',
-              borderRight: '1px solid #ccc',
-              paddingRight: '20px',
-              overflowY: 'auto',
-              minWidth: '45%'
+              marginRight: "20px",
+              borderRight: "1px solid #ccc",
+              paddingRight: "20px",
+              overflowY: "auto",
+              // minWidth: "45%"
             }}
           >
             <h2>{pdfFile.name}</h2>
@@ -181,14 +230,14 @@ const PdfUploaderViewer = () => {
               ))}
             </Document>
           </div>
-
+  
           {/* 右侧展示审核反馈信息 */}
           <div
             style={{
               flex: 1,
               paddingLeft: '20px',
               overflowY: 'auto',
-              minWidth: '45%'
+              // minWidth: '45%'
             }}
           >
             <h3>审核信息反馈</h3>
@@ -209,7 +258,7 @@ const PdfUploaderViewer = () => {
           </div>
         </div>
       )}
-
+  
       {pdfFile && (
         <Button
           type="primary"
@@ -221,6 +270,7 @@ const PdfUploaderViewer = () => {
       )}
     </div>
   );
+  
 };
 
 export default PdfUploaderViewer;
