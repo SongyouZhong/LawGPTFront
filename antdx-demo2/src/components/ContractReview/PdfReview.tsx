@@ -1,86 +1,199 @@
 import React, { useState } from 'react';
-import { Upload, Button } from 'antd';
+import { Upload, Button, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
-import type { RcFile } from 'antd/es/upload';
+import { RcFile } from 'antd/es/upload/interface';
+import ReactMarkdown from 'react-markdown'; // Import react-markdown
 
-// 配置 pdfjs worker（根据项目实际情况调整路径）
-pdfjs.GlobalWorkerOptions.workerSrc = `/pdfjs/build/pdf.worker.mjs`;
+const API_KEY = 'app-NfLc5sZSrgyPfN81UJ9p1G75';
 
 const PdfUploaderViewer = () => {
-  // 保存上传的文件对象
   const [pdfFile, setPdfFile] = useState<RcFile | null>(null);
-  // 保存 PDF 页数
-  const [numPages, setNumPages] = useState<number | null>(null);
+  const [totalCheck, setTotalCheck] = useState<string>(''); // 用于存储总体审查结果
+  const [partCheck, setPartCheck] = useState<string>(''); // 用于存储段落审查结果
 
-  // 上传之前，阻止自动上传行为，将文件存入 state 中
   const beforeUpload = (file: RcFile) => {
     setPdfFile(file);
     return false;
   };
 
-  // PDF 加载成功后的回调
-  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
-    setNumPages(numPages);
+  const startWorkflow = async () => {
+    if (!pdfFile) {
+      message.error('请先上传 PDF 文件');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', pdfFile);
+    formData.append('user', 'abc-123'); // 替换为实际的用户标识
+
+    try {
+      const uploadResponse = await fetch('http://localhost/v1/files/upload', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${API_KEY}`, // 替换为实际的 API 密钥
+        },
+        body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+        throw new Error('文件上传失败');
+      }
+
+      const { id: uploadFileId } = await uploadResponse.json();
+
+      const workflowResponse = await fetch('http://localhost/v1/workflows/run', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${API_KEY}`, // 替换为实际的 API 密钥
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          inputs: {
+            user_input_file: {
+              transfer_method: 'local_file',
+              upload_file_id: uploadFileId,
+              type: 'document',
+            },
+            part: "乙方",
+          },
+          response_mode: 'streaming',
+          user: 'abc-123', // 替换为实际的用户标识
+        }),
+      });
+
+      if (!workflowResponse.ok) {
+        throw new Error('工作流启动失败');
+      }
+
+      const reader = workflowResponse.body?.getReader();
+      if (!reader) {
+        throw new Error('无法读取工作流响应');
+      }
+
+      const decoder = new TextDecoder();
+      let done = false;
+      let result = '';
+
+      while (!done) {
+        const { value, done: doneReading } = await reader.read();
+        done = doneReading;
+        result += decoder.decode(value, { stream: true });
+      }
+
+      try {
+        const events = result.split('\n\n');
+        for (const event of events) {
+          if (event) {
+            const jsonString = event.replace(/^data:\s*/, '');
+            if (jsonString === '"ping"') {
+              continue;
+            }
+            try {
+              const eventJson = JSON.parse(jsonString);
+              const eventType = eventJson.event;
+              switch (eventType) {
+                case 'workflow_started':
+                  console.log('工作流已启动');
+                  break;
+                case 'node_started':
+                  break;
+                case 'node_finished':
+                  break;
+                case 'workflow_finished':
+                  if (eventJson.data.outputs) {
+                    const totalCheckOutput = eventJson.data.outputs.totalcheck.output;
+                    const partCheckOutput = eventJson.data.outputs.partcheck.output;
+                    setTotalCheck(totalCheckOutput);
+                    setPartCheck(partCheckOutput);
+                  }
+                  break;
+                case 'ping':
+                  break;
+                default:
+                  console.log(`未知事件类型: ${event}`);
+              }
+            } catch (parseError) {
+              console.error('JSON 解析错误:', parseError);
+              continue;
+            }
+          }
+        }
+      } catch (error) {
+        console.error('处理工作流结果时发生错误:', error);
+        message.error('处理工作流结果时发生错误');
+      }
+
+      console.log('工作流结果:', result);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        message.error(error.message);
+      } else {
+        message.error('发生了未知错误');
+      }
+    }
   };
 
   return (
     <div style={{ padding: '20px' }}>
-      {/* 未上传时显示上传组件 */}
       {!pdfFile && (
         <Upload beforeUpload={beforeUpload} showUploadList={false}>
           <Button icon={<UploadOutlined />}>点击上传 PDF 文件</Button>
         </Upload>
       )}
 
-      {/* 上传后显示左右两栏布局 */}
       {pdfFile && (
         <div
           style={{
             display: 'flex',
             marginTop: '20px',
-            height: '80vh'
+            height: '80vh',
           }}
         >
-          {/* 左侧：PDF 展示区域 */}
           <div
             style={{
               flex: 1,
               marginRight: '20px',
               borderRight: '1px solid #ccc',
               paddingRight: '20px',
-              overflowY: 'auto'
+              overflowY: 'auto',
             }}
           >
-            {/* 在 PDF 展示区域上方添加文件名称 */}
             {pdfFile && <h2>{pdfFile.name}</h2>}
-            <Document file={pdfFile} onLoadSuccess={onDocumentLoadSuccess}>
-              {Array.from(new Array(numPages), (el, index) => (
-                <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-              ))}
-            </Document>
+            {/* 在此处添加 PDF 展示组件 */}
           </div>
-          {/* 右侧：审核信息反馈区域 */}
           <div
             style={{
               flex: 1,
               paddingLeft: '20px',
-              overflowY: 'auto'
+              overflowY: 'auto',
             }}
           >
             <h3>审核信息反馈</h3>
-            <p>
-              这里可以展示各种审核信息、评论、反馈等内容。如果内容较多，右侧区域会自动出现垂直滚动条。
-            </p>
-            {Array.from({ length: 30 }).map((_, index) => (
-              <div key={index} style={{ marginBottom: '10px' }}>
-                <strong>审核反馈 {index + 1}:</strong> 这里是审核意见的示例内容...
-              </div>
-            ))}
+            <div
+              style={{
+                whiteSpace: 'pre-wrap',
+                wordWrap: 'break-word',
+                overflowY: 'auto',
+                height: '70vh',
+              }}
+            >
+              <h4>总体审查</h4>
+              <ReactMarkdown>{totalCheck}</ReactMarkdown>
+              <h4>段落审查</h4>
+              <ReactMarkdown>{partCheck}</ReactMarkdown>
+            </div>
           </div>
         </div>
+      )}
+
+      {pdfFile && (
+        <Button
+          type="primary"
+          onClick={startWorkflow}
+          style={{ marginTop: '20px' }}
+        >
+          启动工作流
+        </Button>
       )}
     </div>
   );
