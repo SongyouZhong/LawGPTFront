@@ -2,18 +2,28 @@ import React, { useState } from 'react';
 import { Upload, Button, message } from 'antd';
 import { UploadOutlined } from '@ant-design/icons';
 import { RcFile } from 'antd/es/upload/interface';
-import ReactMarkdown from 'react-markdown'; // Import react-markdown
+import ReactMarkdown from 'react-markdown';
+import { Document, Page, pdfjs } from 'react-pdf';
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-const API_KEY = 'app-NfLc5sZSrgyPfN81UJ9p1G75';
+// 将 workerSrc 设置为本地路径，注意 process.env.PUBLIC_URL 通常对应 public 目录
+pdfjs.GlobalWorkerOptions.workerSrc = process.env.PUBLIC_URL + '/pdfjs/build/pdf.worker.mjs';
+
+const API_KEY = 'app-LwZXrp7TMMTeL5u0nTADQeeg';
 
 const PdfUploaderViewer = () => {
   const [pdfFile, setPdfFile] = useState<RcFile | null>(null);
-  const [totalCheck, setTotalCheck] = useState<string>(''); // 用于存储总体审查结果
-  const [partCheck, setPartCheck] = useState<string>(''); // 用于存储段落审查结果
+  const [totalCheck, setTotalCheck] = useState<string>('');
+  const [numPages, setNumPages] = useState<number>(0);
 
   const beforeUpload = (file: RcFile) => {
     setPdfFile(file);
     return false;
+  };
+
+  const onDocumentLoadSuccess = ({ numPages }: { numPages: number }) => {
+    setNumPages(numPages);
   };
 
   const startWorkflow = async () => {
@@ -30,7 +40,7 @@ const PdfUploaderViewer = () => {
       const uploadResponse = await fetch('http://localhost/v1/files/upload', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${API_KEY}`, // 替换为实际的 API 密钥
+          Authorization: `Bearer ${API_KEY}`,
         },
         body: formData,
       });
@@ -44,7 +54,7 @@ const PdfUploaderViewer = () => {
       const workflowResponse = await fetch('http://localhost/v1/workflows/run', {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${API_KEY}`, // 替换为实际的 API 密钥
+          Authorization: `Bearer ${API_KEY}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -57,7 +67,7 @@ const PdfUploaderViewer = () => {
             part: "乙方",
           },
           response_mode: 'streaming',
-          user: 'abc-123', // 替换为实际的用户标识
+          user: 'abc-123',
         }),
       });
 
@@ -101,10 +111,10 @@ const PdfUploaderViewer = () => {
                   break;
                 case 'workflow_finished':
                   if (eventJson.data.outputs) {
-                    const totalCheckOutput = eventJson.data.outputs.totalcheck.output;
-                    const partCheckOutput = eventJson.data.outputs.partcheck.output;
+                    console.log("-------workflow_finished outputs-----------")
+                    console.log(eventJson.data.outputs)
+                    const totalCheckOutput = eventJson.data.outputs.text;
                     setTotalCheck(totalCheckOutput);
-                    setPartCheck(partCheckOutput);
                   }
                   break;
                 case 'ping':
@@ -149,6 +159,7 @@ const PdfUploaderViewer = () => {
             height: '80vh',
           }}
         >
+          {/* 左侧展示 PDF 内容 */}
           <div
             style={{
               flex: 1,
@@ -158,9 +169,19 @@ const PdfUploaderViewer = () => {
               overflowY: 'auto',
             }}
           >
-            {pdfFile && <h2>{pdfFile.name}</h2>}
-            {/* 在此处添加 PDF 展示组件 */}
+            <h2>{pdfFile.name}</h2>
+            <Document
+              file={pdfFile}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={(error) => console.error('加载 PDF 失败: ', error)}
+            >
+              {Array.from(new Array(numPages), (el, index) => (
+                <Page key={`page_${index + 1}`} pageNumber={index + 1} />
+              ))}
+            </Document>
           </div>
+
+          {/* 右侧展示审核反馈信息 */}
           <div
             style={{
               flex: 1,
@@ -179,8 +200,6 @@ const PdfUploaderViewer = () => {
             >
               <h4>总体审查</h4>
               <ReactMarkdown>{totalCheck}</ReactMarkdown>
-              <h4>段落审查</h4>
-              <ReactMarkdown>{partCheck}</ReactMarkdown>
             </div>
           </div>
         </div>
