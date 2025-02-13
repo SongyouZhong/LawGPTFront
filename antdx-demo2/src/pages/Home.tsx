@@ -113,6 +113,8 @@ const Home: React.FC = () => {
         });
         const result = await response.json();
         if (result.data) {
+          console.log("获取到会话列表")
+          console.log(result.data)
           // 将返回的会话列表转换为 Conversations 组件所需格式（至少 key 和 label 字段）
           const items = result.data.map((conv: any) => ({
             key: conv.id,
@@ -161,9 +163,49 @@ const Home: React.FC = () => {
     setActiveKey(String(conversationsItems.length));
   };
 
-  const onConversationClick = (key: string) => {
+  const onConversationClick = async (key: string) => {
     setActiveKey(key);
+    
+    // 获取当前会话的历史消息
+    const apiKey = 'app-SQpOipvZ9uVJSLAf0h76HhQ0';  // 请替换为实际的 API-Key
+    const userId = 'USER_ID_123';                  // 请替换为实际的用户标识
+  
+    const conversationId = key; // 会话的 ID
+  
+    try {
+      const response = await fetch(`http://localhost/v1/messages?conversation_id=${conversationId}&user=${userId}&limit=20`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      const result = await response.json();
+      
+      if (result.data) {
+        console.log("返回的历史消息")
+        console.log(result.data)
+        // 将返回的历史消息列表更新到 state
+        const newMessages = result.data.map((msg: any) => ({
+          id: msg.id,
+          message: msg.answer, // 假设 `answer` 为消息内容
+          status: 'ai',
+        }));
+  
+        setMessages(newMessages);
+      }
+  
+      // 检查是否还有更多消息
+      if (result.has_more) {
+        // 如果有更多消息，可以设置 `first_id` 并通过滚动加载来获取更多
+        const firstMessageId = result.data[result.data.length - 1].id;
+        // 你可以用 `firstMessageId` 来加载下一页
+      }
+    } catch (error) {
+      console.error('Error fetching conversation messages:', error);
+    }
   };
+  
 
   const handleFileChange = (info: any) => {
     setAttachedFiles(info.fileList);

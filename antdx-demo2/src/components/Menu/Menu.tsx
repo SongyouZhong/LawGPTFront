@@ -45,7 +45,7 @@ const Menu: React.FC<MenuProps> = ({
         className={styles.addBtn}
         icon={<PlusOutlined />}
       >
-        New Conversation
+        新会话
       </Button>
       {/* 🌟 会话管理 */}
       <Conversations
