@@ -91,7 +91,9 @@ const Home: React.FC = () => {
       const apiKey = 'app-SQpOipvZ9uVJSLAf0h76HhQ0'; // 请替换为实际的 API-Key
       const userId = 'USER_ID_456';      // 请替换为实际的用户标识
       try {
-        const response = await fetch(`http://localhost/v1/conversations?user=${userId}`, {
+        console.log("将要请求的URL是")
+        console.log(`${process.env.REACT_APP_API_URL}/v1/conversations?user=${userId}`)
+        const response = await fetch(`${process.env.REACT_APP_API_URL}/v1/conversations?user=${userId}`, {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${apiKey}`,
@@ -161,7 +163,7 @@ const Home: React.FC = () => {
     const conversationId = key; // 会话的 ID
   
     try {
-      const response = await fetch(`http://localhost/v1/messages?conversation_id=${conversationId}&user=${userId}&limit=20`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/v1/messages?conversation_id=${conversationId}&user=${userId}&limit=20`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${apiKey}`,

@@ -37,7 +37,7 @@ const PdfUploaderViewer = () => {
     formData.append('user', 'abc-123'); // 替换为实际的用户标识
 
     try {
-      const uploadResponse = await fetch('http://localhost/v1/files/upload', {
+      const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/v1/files/upload`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${API_KEY}`,
@@ -51,7 +51,7 @@ const PdfUploaderViewer = () => {
 
       const { id: uploadFileId } = await uploadResponse.json();
 
-      const workflowResponse = await fetch('http://localhost/v1/workflows/run', {
+      const workflowResponse = await fetch(`${process.env.REACT_APP_API_URL}/v1/workflows/run`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${API_KEY}`,
