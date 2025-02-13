@@ -30,28 +30,14 @@ const placeholderPromptsItems = [
         title="Hot Topics"
       />
     ),
-    description: 'What are you interested in?',
+    description: '你可能感兴趣?',
     children: [
-      { key: '1-1', description: `What's new in X?` },
-      { key: '1-2', description: `What's AGI?` },
-      { key: '1-3', description: `Where is the doc?` },
+      { key: '1-1', description: `如何注册商标并确保我的商标权益得到全面的法律保护？` },
+      { key: '1-2', description: `如何判断一份合同是否有效？在合同履行过程中，如果双方发生纠纷，应如何处理？` },
+      { key: '1-3', description: `如果他人的民事权益受到侵害，但行为人认为自己没有过失，那么责任归属应如何确定？` },
     ],
   },
-  {
-    key: '2',
-    label: (
-      <RenderTitle
-        icon={<ReadOutlined style={{ color: '#1890FF' }} />}
-        title="Design Guide"
-      />
-    ),
-    description: 'How to design a good product?',
-    children: [
-      { key: '2-1', icon: <HeartOutlined />, description: `Know the well` },
-      { key: '2-2', icon: <SmileOutlined />, description: `Set the AI role` },
-      { key: '2-3', icon: <CommentOutlined />, description: `Express the feeling` },
-    ],
-  },
+
 ];
 
 const senderPromptsItems = [
@@ -93,16 +79,17 @@ const Home: React.FC = () => {
   const [headerOpen, setHeaderOpen] = useState(false);
   // 是否切换到合同审核模式（如果你还有这个需求）
   const [contractReviewMode, setContractReviewMode] = useState(false);
+  // const [conversationId, setConversationId] = useState<string | null>(null);
 
   // ==================== Hooks ====================
   // 自定义聊天 hook
-  const { onRequest, messages, setMessages } = useChatHook();
+  const { onRequest, messages, setMessages } = useChatHook(activeKey);
 
   // ==================== 获取会话列表 ====================
   useEffect(() => {
     async function fetchConversations() {
       const apiKey = 'app-SQpOipvZ9uVJSLAf0h76HhQ0'; // 请替换为实际的 API-Key
-      const userId = 'USER_ID_123';      // 请替换为实际的用户标识
+      const userId = 'USER_ID_456';      // 请替换为实际的用户标识
       try {
         const response = await fetch(`http://localhost/v1/conversations?user=${userId}`, {
           method: 'GET',
@@ -119,12 +106,11 @@ const Home: React.FC = () => {
           const items = result.data.map((conv: any) => ({
             key: conv.id,
             label: conv.name, // 这里默认使用后端返回的 name 作为会话名称
+            conversation_id: conv.id, // 直接使用 conv.id 作为 conversation_id
           }));
           setConversationsItems(items);
-          // 可选：将第一个会话设为 activeKey
-          if (items.length > 0) {
-            setActiveKey(items[0].key);
-          }
+          
+        
         }
       } catch (error) {
         console.error('Error fetching conversations:', error);
@@ -164,11 +150,13 @@ const Home: React.FC = () => {
   };
 
   const onConversationClick = async (key: string) => {
+    console.log("会话列表发生点击")
+    console.log(key)
     setActiveKey(key);
     
     // 获取当前会话的历史消息
     const apiKey = 'app-SQpOipvZ9uVJSLAf0h76HhQ0';  // 请替换为实际的 API-Key
-    const userId = 'USER_ID_123';                  // 请替换为实际的用户标识
+    const userId = 'USER_ID_456';                  // 请替换为实际的用户标识
   
     const conversationId = key; // 会话的 ID
   
@@ -186,11 +174,20 @@ const Home: React.FC = () => {
         console.log("返回的历史消息")
         console.log(result.data)
         // 将返回的历史消息列表更新到 state
-        const newMessages = result.data.map((msg: any) => ({
-          id: msg.id,
-          message: msg.answer, // 假设 `answer` 为消息内容
-          status: 'ai',
-        }));
+        const newMessages = result.data.map((msg: any) => {
+          return [
+            {
+              id: msg.id,
+              message: msg.query, // 用户提问
+              status: 'local', // 用户消息
+            },
+            {
+              id: msg.id,
+              message: msg.answer, // AI 回答
+              status: 'ai', // AI 消息
+            },
+          ];
+        }).flat(); // 将二维数组展平为一维数组
   
         setMessages(newMessages);
       }
@@ -224,14 +221,8 @@ const Home: React.FC = () => {
       <Welcome
         variant="borderless"
         icon="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*s5sNRo5LjfQAAAAAAAAAAAAADgCCAQ/fmt.webp"
-        title="Hello, I'm Ant Design X"
-        description="Base on Ant Design, AGI product interface solution, create a better intelligent vision~"
-        extra={
-          <Space>
-            <Button icon={<ShareAltOutlined />} />
-            <Button icon={<EllipsisOutlined />} />
-          </Space>
-        }
+        title="你好，我是法务小助手"
+        description="基于最新的阿里通义千问大模型"
       />
       <Prompts
         title="Do you want?"

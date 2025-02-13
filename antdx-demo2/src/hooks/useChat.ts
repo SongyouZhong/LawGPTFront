@@ -2,8 +2,8 @@
 import { useXChat } from '@ant-design/x';
 import useAgentHook from './useAgent';
 
-const useChatHook = () => {
-  const agent = useAgentHook();
+const useChatHook = (activeKey : string) => {
+  const agent = useAgentHook(activeKey);
   const { onRequest, messages, setMessages } = useXChat({
     agent,
   });

@@ -2,15 +2,18 @@ import { useXAgent } from '@ant-design/x';
 const API_KEY = 'app-SQpOipvZ9uVJSLAf0h76HhQ0';
 const BASE_URL = 'http://localhost/v1';
 
-const useAgentHook = () => {
+const useAgentHook = (activeKey: string) => {
   const [agent] = useXAgent({
     request: async ({ message }, { onUpdate, onSuccess, onError }) => {
       try {
+        console.log("当前对话的activeKey")
+        console.log(activeKey)
         const payload = {
           query: message,             // 用户输入的消息
           inputs: {},                 // 其它可选参数
           response_mode: 'streaming',  // 流式返回
-          user: 'USER_ID_123',        // 用户标识，请替换为实际用户ID
+          user: 'USER_ID_456',        // 用户标识，请替换为实际用户ID
+          conversation_id:  Number(activeKey) !== 0 ? activeKey : null, // 传递 conversation_id
         };
 
         const response = await fetch(`${BASE_URL}/chat-messages`, {
@@ -67,7 +70,7 @@ const useAgentHook = () => {
                 }
                 if (event === 'agent_message') {
                   const answerPart = parsed.answer ?? '';
-                  console.log('Received answer part:', answerPart);
+                  // console.log('Received answer part:', answerPart);
                   partialData += answerPart;
                   onUpdate(partialData);
                 }
