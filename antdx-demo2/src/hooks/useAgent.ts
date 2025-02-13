@@ -1,6 +1,6 @@
 import { useXAgent } from '@ant-design/x';
 const API_KEY = 'app-SQpOipvZ9uVJSLAf0h76HhQ0';
-const BASE_URL = '${process.env.REACT_APP_API_URL}/v1';
+const BASE_URL = `${process.env.REACT_APP_API_URL}/v1`;
 
 const useAgentHook = (activeKey: string) => {
   const [agent] = useXAgent({
