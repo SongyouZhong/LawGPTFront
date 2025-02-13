@@ -24,7 +24,7 @@ interface ChatProps {
   headerOpen: boolean;
   setHeaderOpen: (open: boolean) => void;
   handleFileChange: GetProp<typeof Attachments, 'onChange'>;
-  senderPromptsItems: GetProp<typeof Prompts, 'items'>;
+  // senderPromptsItems: GetProp<typeof Prompts, 'items'>;
   onPromptsItemClick: GetProp<typeof Prompts, 'onItemClick'>;
   placeholderNode: React.ReactNode;
   roles: any; // 根据实际类型定义
@@ -40,7 +40,7 @@ const Chat: React.FC<ChatProps> = ({
   headerOpen,
   setHeaderOpen,
   handleFileChange,
-  senderPromptsItems,
+  // senderPromptsItems,
   onPromptsItemClick,
   placeholderNode,
   roles,
@@ -55,11 +55,11 @@ const Chat: React.FC<ChatProps> = ({
     content: message,
   }));
 
-  const attachmentsNode = (
-    <Badge dot={attachedFiles.length > 0 && !headerOpen}>
-      <Button type="text" icon={<PaperClipOutlined />} onClick={() => setHeaderOpen(!headerOpen)} />
-    </Badge>
-  );
+  // const attachmentsNode = (
+  //   <Badge dot={attachedFiles.length > 0 && !headerOpen}>
+  //     <Button type="text" icon={<PaperClipOutlined />} onClick={() => setHeaderOpen(!headerOpen)} />
+  //   </Badge>
+  // );
 
   const senderHeader = (
     <Sender.Header
@@ -94,7 +94,7 @@ const Chat: React.FC<ChatProps> = ({
       {/* 🌟 消息列表 */}
       <MessageList items={items} roles={roles} placeholderNode={placeholderNode} />
       {/* 🌟 提示词 */}
-      <PromptsSection items={senderPromptsItems} onItemClick={onPromptsItemClick} />
+      {/* <PromptsSection items={senderPromptsItems} onItemClick={onPromptsItemClick} /> */}
       {/* 🌟 输入框 */}
       <SenderSection
         content={content}
@@ -104,7 +104,7 @@ const Chat: React.FC<ChatProps> = ({
         headerOpen={headerOpen}
         setHeaderOpen={setHeaderOpen}
         handleFileChange={handleFileChange}
-        attachmentsNode={attachmentsNode}
+        // attachmentsNode={attachmentsNode}
         senderHeader={senderHeader}
         loading={loading}
       />

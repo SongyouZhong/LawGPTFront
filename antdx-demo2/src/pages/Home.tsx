@@ -24,12 +24,12 @@ const defaultConversationsItems = [
 const placeholderPromptsItems = [
   {
     key: '1',
-    label: (
-      <RenderTitle
-        icon={<FireOutlined style={{ color: '#FF4D4F' }} />}
-        title="Hot Topics"
-      />
-    ),
+    // label: (
+    //   <RenderTitle
+    //     icon={<FireOutlined style={{ color: '#FF4D4F' }} />}
+    //     title="Hot Topics"
+    //   />
+    // ),
     description: '你可能感兴趣?',
     children: [
       { key: '1-1', description: `如何注册商标并确保我的商标权益得到全面的法律保护？` },
@@ -225,7 +225,6 @@ const Home: React.FC = () => {
         description="基于最新的阿里通义千问大模型"
       />
       <Prompts
-        title="Do you want?"
         items={placeholderPromptsItems}
         styles={{ list: { width: '100%' }, item: { flex: 1 } }}
         onItemClick={onPromptsItemClick}
@@ -254,7 +253,7 @@ const Home: React.FC = () => {
         headerOpen={headerOpen}
         setHeaderOpen={setHeaderOpen}
         handleFileChange={handleFileChange}
-        senderPromptsItems={senderPromptsItems}
+        // senderPromptsItems={senderPromptsItems}
         onPromptsItemClick={onPromptsItemClick}
         placeholderNode={placeholderNode}
         roles={roles}

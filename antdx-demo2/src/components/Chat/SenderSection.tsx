@@ -19,7 +19,7 @@ interface SenderSectionProps {
   headerOpen: boolean;
   setHeaderOpen: (open: boolean) => void;
   handleFileChange: GetProp<typeof Attachments, 'onChange'>;
-  attachmentsNode: React.ReactNode;
+  // attachmentsNode: React.ReactNode;
   senderHeader: React.ReactNode;
   loading: boolean;
 }
@@ -32,7 +32,7 @@ const SenderSection: React.FC<SenderSectionProps> = ({
   headerOpen,
   setHeaderOpen,
   handleFileChange,
-  attachmentsNode,
+  // attachmentsNode,
   senderHeader,
   loading,
 }) => {
@@ -44,7 +44,7 @@ const SenderSection: React.FC<SenderSectionProps> = ({
       header={senderHeader}
       onSubmit={onSubmit}
       onChange={setContent}
-      prefix={attachmentsNode}
+      // prefix={attachmentsNode}
       loading={loading}
       className={styles.sender}
     />

@@ -15,15 +15,15 @@ const topMenuItems = [
     icon: <AppstoreOutlined />,
     label: <Link to="/contract-review">合同审查</Link>,
   },
-  {
-    key: 'submenu',
-    icon: <SettingOutlined />,
-    label: '更多',
-    children: [
-      { key: 'setting:1', label: '选项一' },
-      { key: 'setting:2', label: '选项二' },
-    ],
-  },
+  // {
+  //   key: 'submenu',
+  //   icon: <SettingOutlined />,
+  //   label: '更多',
+  //   children: [
+  //     { key: 'setting:1', label: '选项一' },
+  //     { key: 'setting:2', label: '选项二' },
+  //   ],
+  // },
 ];
 
 const Layout: React.FC = () => {
