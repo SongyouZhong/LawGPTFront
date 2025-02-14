@@ -144,7 +144,7 @@ const PdfUploaderViewer = () => {
   };
 
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "20px",width: "90vw" }}>
       {!pdfFile && (
         <div style={{ padding: "40px", textAlign: "center" }}>
           {/* 顶部标题 */}
