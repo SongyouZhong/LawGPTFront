@@ -219,7 +219,7 @@ const Home: React.FC = () => {
   const placeholderNode = contractReviewMode ? (
     <PdfReview />
   ) : (
-    <Space direction="vertical" size={16}>
+    <Space direction="vertical" size={16} >
       <Welcome
         variant="borderless"
         icon="https://mdn.alipayobjects.com/huamei_iwk9zp/afts/img/A*s5sNRo5LjfQAAAAAAAAAAAAADgCCAQ/fmt.webp"
@@ -236,15 +236,16 @@ const Home: React.FC = () => {
 
   // ==================== Render ====================
   return (
-    <div style={{ display: 'flex', height: '100%' }}>
+    <div style={{ display: 'flex', height: '100vh',width:'100%' }}>
       {/* 左侧：对话列表 + 新对话按钮 */}
+      
       <MenuCustom
         conversationsItems={conversationsItems}
         onAddConversation={onAddConversation}
         activeKey={activeKey}
         onConversationClick={onConversationClick}
       />
-
+   
       {/* 右侧：聊天面板 */}
       <Chat
         messages={messages}

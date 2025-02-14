@@ -32,10 +32,11 @@ const useMenuStyles = createStyles(({ token, css }) => ({
     }
   `,
   addBtn: css`
-    background: #1677ff0f;
+    background: #0563f8f2;
     border: 1px solid #1677ff34;
     width: calc(100% - 24px);
-    margin: 0 12px 24px 12px;
+    margin: 24px 12px;
+    color: white;
   `,
   conversations: css`
     padding: 0 12px;

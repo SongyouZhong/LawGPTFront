@@ -11,7 +11,7 @@ const useChatStyles = createStyles(({ token, css }) => ({
     display: flex;
     flex-direction: column;
     padding: ${token.paddingLG}px;
-    gap: 16px;
+    justify-content: space-around;
   `,
   messages: css`
     flex: 1;
