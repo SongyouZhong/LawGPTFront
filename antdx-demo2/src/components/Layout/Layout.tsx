@@ -1,17 +1,17 @@
-import React from 'react';
-import { Menu } from 'antd';
-import { MailOutlined, AppstoreOutlined, SettingOutlined } from '@ant-design/icons';
-import { Outlet, Link } from 'react-router-dom';
-import useLayoutStyles from './useLayoutStyles';
+import React from "react";
+import { Menu } from "antd";
+import { MailOutlined, AppstoreOutlined } from "@ant-design/icons";
+import { Outlet, Link } from "react-router-dom";
+import useLayoutStyles from "./useLayoutStyles";
 
 const topMenuItems = [
   {
-    key: 'home',
+    key: "home",
     icon: <MailOutlined />,
     label: <Link to="/">首页</Link>,
   },
   {
-    key: 'contractReview',
+    key: "contractReview",
     icon: <AppstoreOutlined />,
     label: <Link to="/contract-review">合同审查</Link>,
   },
