@@ -1,20 +1,21 @@
-import React, { useState } from 'react';
-import { Upload, Button, message, Skeleton  } from 'antd';
-import { UploadOutlined } from '@ant-design/icons';
-import { RcFile } from 'antd/es/upload/interface';
-import ReactMarkdown from 'react-markdown';
-import { Document, Page, pdfjs } from 'react-pdf';
-import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
-import 'react-pdf/dist/esm/Page/TextLayer.css';
+import React, { useState } from "react";
+import { Upload, Button, message, Skeleton } from "antd";
+import { CloudUploadOutlined } from "@ant-design/icons";
+import { RcFile } from "antd/es/upload/interface";
+import ReactMarkdown from "react-markdown";
+import { Document, Page, pdfjs } from "react-pdf";
+import "react-pdf/dist/esm/Page/AnnotationLayer.css";
+import "react-pdf/dist/esm/Page/TextLayer.css";
 
 // 将 workerSrc 设置为本地路径，注意 process.env.PUBLIC_URL 通常对应 public 目录
-pdfjs.GlobalWorkerOptions.workerSrc = process.env.PUBLIC_URL + '/pdfjs/build/pdf.worker.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc =
+  process.env.PUBLIC_URL + "/pdfjs/build/pdf.worker.mjs";
 
-const API_KEY = 'app-LwZXrp7TMMTeL5u0nTADQeeg';
+const API_KEY = "app-LwZXrp7TMMTeL5u0nTADQeeg";
 
 const PdfUploaderViewer = () => {
   const [pdfFile, setPdfFile] = useState<RcFile | null>(null);
-  const [totalCheck, setTotalCheck] = useState<string>('');
+  const [totalCheck, setTotalCheck] = useState<string>("");
   const [numPages, setNumPages] = useState<number>(0);
 
   const beforeUpload = (file: RcFile) => {
@@ -28,61 +29,67 @@ const PdfUploaderViewer = () => {
 
   const startWorkflow = async () => {
     if (!pdfFile) {
-      message.error('请先上传 PDF 文件');
+      message.error("请先上传 PDF 文件");
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', pdfFile);
-    formData.append('user', 'abc-123'); // 替换为实际的用户标识
+    formData.append("file", pdfFile);
+    formData.append("user", "abc-123"); // 替换为实际的用户标识
 
     try {
-      const uploadResponse = await fetch(`${process.env.REACT_APP_API_URL}/v1/files/upload`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-        },
-        body: formData,
-      });
+      const uploadResponse = await fetch(
+        `${process.env.REACT_APP_API_URL}/v1/files/upload`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${API_KEY}`,
+          },
+          body: formData,
+        }
+      );
 
       if (!uploadResponse.ok) {
-        throw new Error('文件上传失败');
+        throw new Error("文件上传失败");
       }
 
       const { id: uploadFileId } = await uploadResponse.json();
 
-      const workflowResponse = await fetch(`${process.env.REACT_APP_API_URL}/v1/workflows/run`, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          inputs: {
-            user_input_file: {
-              transfer_method: 'local_file',
-              upload_file_id: uploadFileId,
-              type: 'document',
-            },
-            part: "乙方",
+      const workflowResponse = await fetch(
+        `${process.env.REACT_APP_API_URL}/v1/workflows/run`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${API_KEY}`,
+            "Content-Type": "application/json",
           },
-          response_mode: 'streaming',
-          user: 'abc-123',
-        }),
-      });
+          body: JSON.stringify({
+            inputs: {
+              user_input_file: {
+                transfer_method: "local_file",
+                upload_file_id: uploadFileId,
+                type: "document",
+              },
+              part: "乙方",
+            },
+            response_mode: "streaming",
+            user: "abc-123",
+          }),
+        }
+      );
 
       if (!workflowResponse.ok) {
-        throw new Error('工作流启动失败');
+        throw new Error("工作流启动失败");
       }
 
       const reader = workflowResponse.body?.getReader();
       if (!reader) {
-        throw new Error('无法读取工作流响应');
+        throw new Error("无法读取工作流响应");
       }
 
       const decoder = new TextDecoder();
       let done = false;
-      let result = '';
+      let result = "";
 
       while (!done) {
         const { value, done: doneReading } = await reader.read();
@@ -91,10 +98,10 @@ const PdfUploaderViewer = () => {
       }
 
       try {
-        const events = result.split('\n\n');
+        const events = result.split("\n\n");
         for (const event of events) {
           if (event) {
-            const jsonString = event.replace(/^data:\s*/, '');
+            const jsonString = event.replace(/^data:\s*/, "");
             if (jsonString === '"ping"') {
               continue;
             }
@@ -102,61 +109,85 @@ const PdfUploaderViewer = () => {
               const eventJson = JSON.parse(jsonString);
               const eventType = eventJson.event;
               switch (eventType) {
-                case 'workflow_started':
-                  console.log('工作流已启动');
+                case "workflow_started":
+                  console.log("工作流已启动");
                   break;
-                case 'node_started':
+                case "node_started":
                   break;
-                case 'node_finished':
+                case "node_finished":
                   break;
-                case 'workflow_finished':
+                case "workflow_finished":
                   if (eventJson.data.outputs) {
-                    console.log("-------workflow_finished outputs-----------")
-                    console.log(eventJson.data.outputs)
+                    console.log("-------workflow_finished outputs-----------");
+                    console.log(eventJson.data.outputs);
                     const totalCheckOutput = eventJson.data.outputs.text;
                     setTotalCheck(totalCheckOutput);
                   }
                   break;
-                case 'ping':
+                case "ping":
                   break;
                 default:
                   console.log(`未知事件类型: ${event}`);
               }
             } catch (parseError) {
-              console.error('JSON 解析错误:', parseError);
+              console.error("JSON 解析错误:", parseError);
               continue;
             }
           }
         }
       } catch (error) {
-        console.error('处理工作流结果时发生错误:', error);
-        message.error('处理工作流结果时发生错误');
+        console.error("处理工作流结果时发生错误:", error);
+        message.error("处理工作流结果时发生错误");
       }
 
-      console.log('工作流结果:', result);
+      console.log("工作流结果:", result);
     } catch (error: unknown) {
       if (error instanceof Error) {
         message.error(error.message);
       } else {
-        message.error('发生了未知错误');
+        message.error("发生了未知错误");
       }
     }
   };
 
   return (
-    <div style={{ padding: "20px",width: "90vw" }}>
+    <div style={{ padding: "20px", width: "90vw" }}>
       {!pdfFile && (
-        <div style={{ padding: "40px", textAlign: "center" }}>
-          {/* 顶部标题 */}
-          <div>
-            <h1 style={{ fontSize: "24px", fontWeight: "bold", display: "flex", justifyContent: "center", alignItems: "center", gap: "10px" }}>
-              <span style={{ background: "#4CAF50", color: "#fff", padding: "5px 10px", borderRadius: "50%" }}>📄</span>
-              合同审查
-            </h1>
-            <p style={{ color: "#666", fontSize: "16px" }}>精准又详细的合同审查</p>
-          </div>
-  
-          {/* 上传区域 */}
+        <div
+          style={{
+            padding: "40px",
+            textAlign: "center",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
+          <h1
+            style={{
+              fontSize: "24px",
+              fontWeight: "bold",
+              display: "flex",
+              alignItems: "center",
+              gap: "10px",
+            }}
+          >
+            <span
+              style={{
+                background: "#4CAF50",
+                color: "#fff",
+                padding: "5px 10px",
+                borderRadius: "50%",
+              }}
+            >
+              📄
+            </span>
+            合同审查
+          </h1>
+          <p style={{ color: "#666", fontSize: "16px" }}>
+            精准又详细的合同审查
+          </p>
+
           <div
             style={{
               marginTop: "30px",
@@ -168,6 +199,7 @@ const PdfUploaderViewer = () => {
               marginLeft: "auto",
               marginRight: "auto",
               textAlign: "center",
+              width: "100%",
             }}
           >
             <Upload beforeUpload={beforeUpload} showUploadList={false}>
@@ -182,11 +214,12 @@ const PdfUploaderViewer = () => {
                   borderRadius: "8px",
                   background: "#fff",
                   border: "1px dashed #d9d9d9",
-                  width: "100%",
                 }}
               >
-                <UploadOutlined style={{ fontSize: "24px", color: "#1890ff" }} />
-                <p style={{ marginTop: "10px", fontSize: "16px", color: "#333" }}>
+                <CloudUploadOutlined
+                  style={{ fontSize: "24px", color: "#1890ff" }}
+                />
+                <p style={{ fontSize: "16px", color: "#333" }}>
                   点击上传或拖拽合同文件至此处
                 </p>
                 <p style={{ fontSize: "14px", color: "#888" }}>
@@ -194,11 +227,10 @@ const PdfUploaderViewer = () => {
                 </p>
               </div>
             </Upload>
-  
           </div>
         </div>
       )}
-  
+
       {pdfFile && (
         <div
           style={{
@@ -223,20 +255,20 @@ const PdfUploaderViewer = () => {
             <Document
               file={pdfFile}
               onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={(error) => console.error('加载 PDF 失败: ', error)}
+              onLoadError={(error) => console.error("加载 PDF 失败: ", error)}
             >
               {Array.from(new Array(numPages), (el, index) => (
                 <Page key={`page_${index + 1}`} pageNumber={index + 1} />
               ))}
             </Document>
           </div>
-  
+
           {/* 右侧展示审核反馈信息 */}
           <div
             style={{
               flex: 1,
-              paddingLeft: '20px',
-              overflowY: 'auto',
+              paddingLeft: "20px",
+              overflowY: "auto",
               // minWidth: '45%'
             }}
           >
@@ -244,33 +276,33 @@ const PdfUploaderViewer = () => {
             {totalCheck ? (
               <div
                 style={{
-                  whiteSpace: 'pre-wrap',
-                  wordWrap: 'break-word',
-                  overflowY: 'auto',
-                  height: '70vh',
+                  whiteSpace: "pre-wrap",
+                  wordWrap: "break-word",
+                  overflowY: "auto",
+                  height: "70vh",
                 }}
               >
                 <h4>总体审查</h4>
                 <ReactMarkdown>{totalCheck}</ReactMarkdown>
               </div>
             ) : (
-              <Skeleton active paragraph={{ rows: 10 }} />)}
+              <Skeleton active paragraph={{ rows: 10 }} />
+            )}
           </div>
         </div>
       )}
-  
+
       {pdfFile && (
         <Button
           type="primary"
           onClick={startWorkflow}
-          style={{ marginTop: '20px' }}
+          style={{ marginTop: "20px" }}
         >
           启动工作流
         </Button>
       )}
     </div>
   );
-  
 };
 
 export default PdfUploaderViewer;
