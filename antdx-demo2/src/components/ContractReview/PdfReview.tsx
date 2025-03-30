@@ -1,6 +1,19 @@
-import React, { useState } from "react";
-import { Upload, Button, message, Skeleton } from "antd";
-import { CloudUploadOutlined } from "@ant-design/icons";
+import React, { useState, useEffect } from "react";
+import { Upload, Button, message, Skeleton, Dropdown, Tooltip, Modal, Form, Input, List } from "antd";
+import { 
+  CloudUploadOutlined, 
+  DownloadOutlined,
+  HomeOutlined,
+  InsertRowLeftOutlined,
+  LayoutOutlined,
+  CheckSquareOutlined,
+  EyeOutlined,
+  CommentOutlined,
+  PlusOutlined,
+  MessageOutlined,
+  AppstoreOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import { RcFile } from "antd/es/upload/interface";
 import ReactMarkdown from "react-markdown";
 import { Document, Page, pdfjs } from "react-pdf";
@@ -9,14 +22,113 @@ import "react-pdf/dist/esm/Page/TextLayer.css";
 
 // 将 workerSrc 设置为本地路径，注意 process.env.PUBLIC_URL 通常对应 public 目录
 pdfjs.GlobalWorkerOptions.workerSrc =
-  process.env.PUBLIC_URL + "/pdfjs/build/pdf.worker.mjs";
+`//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-const API_KEY = "app-LwZXrp7TMMTeL5u0nTADQeeg";
+// 定义工具栏项
+const toolbarItems = [
+  {
+    key: 'home',
+    icon: <HomeOutlined />,
+    label: '开始',
+    children: [
+      { key: 'new', label: '新建' },
+      { key: 'open', label: '打开' },
+      { key: 'save', label: '保存' },
+    ]
+  },
+  {
+    key: 'insert',
+    icon: <InsertRowLeftOutlined />,
+    label: '插入',
+    children: [
+      { key: 'table', label: '表格' },
+      { key: 'image', label: '图片' },
+      { key: 'shape', label: '形状' },
+    ]
+  },
+  {
+    key: 'layout',
+    icon: <LayoutOutlined />,
+    label: '页面布局',
+    children: [
+      { key: 'margin', label: '页边距' },
+      { key: 'orientation', label: '方向' },
+      { key: 'size', label: '大小' },
+    ]
+  },
+  {
+    key: 'review',
+    icon: <CheckSquareOutlined />,
+    label: '审阅',
+    children: [
+      { key: 'track', label: '修订' },
+      { key: 'comment', label: '批注' },
+      { key: 'compare', label: '比较' },
+    ]
+  },
+  {
+    key: 'view',
+    icon: <EyeOutlined />,
+    label: '视图',
+    children: [
+      { key: 'zoom', label: '缩放' },
+      { key: 'grid', label: '网格' },
+      { key: 'ruler', label: '标尺' },
+    ]
+  }
+];
+
+interface Comment {
+  id: string;
+  page: number;
+  content: string;
+  position: { x: number; y: number };
+  createdAt: Date;
+}
+
+interface Annotation {
+  id: string;
+  page: number;
+  type: 'highlight' | 'underline' | 'strikethrough';
+  color: string;
+  position: { x: number; y: number };
+  text: string;
+  commentId?: string;  // Optional property to link annotation with a comment
+}
 
 const PdfUploaderViewer = () => {
   const [pdfFile, setPdfFile] = useState<RcFile | null>(null);
   const [totalCheck, setTotalCheck] = useState<string>("");
   const [numPages, setNumPages] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>("home");
+  const [showComments, setShowComments] = useState<boolean>(false);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [isCommentModalVisible, setIsCommentModalVisible] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [commentForm] = Form.useForm();
+
+  // 从 localStorage 加载保存的注释和标注
+  useEffect(() => {
+    if (pdfFile) {
+      const savedComments = localStorage.getItem(`comments_${pdfFile.name}`);
+      const savedAnnotations = localStorage.getItem(`annotations_${pdfFile.name}`);
+      if (savedComments) {
+        setComments(JSON.parse(savedComments));
+      }
+      if (savedAnnotations) {
+        setAnnotations(JSON.parse(savedAnnotations));
+      }
+    }
+  }, [pdfFile]);
+
+  // 保存注释和标注到 localStorage
+  useEffect(() => {
+    if (pdfFile) {
+      localStorage.setItem(`comments_${pdfFile.name}`, JSON.stringify(comments));
+      localStorage.setItem(`annotations_${pdfFile.name}`, JSON.stringify(annotations));
+    }
+  }, [comments, annotations, pdfFile]);
 
   const beforeUpload = (file: RcFile) => {
     setPdfFile(file);
@@ -27,132 +139,342 @@ const PdfUploaderViewer = () => {
     setNumPages(numPages);
   };
 
-  const startWorkflow = async () => {
+  const handleDownload = () => {
     if (!pdfFile) {
-      message.error("请先上传 PDF 文件");
+      message.error("没有可下载的文件");
       return;
     }
+    const url = URL.createObjectURL(pdfFile);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = pdfFile.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
-    const formData = new FormData();
-    formData.append("file", pdfFile);
-    formData.append("user", "abc-123"); // 替换为实际的用户标识
-
-    try {
-      const uploadResponse = await fetch(
-        `${process.env.REACT_APP_API_URL}/v1/files/upload`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-          },
-          body: formData,
-        }
-      );
-
-      if (!uploadResponse.ok) {
-        throw new Error("文件上传失败");
-      }
-
-      const { id: uploadFileId } = await uploadResponse.json();
-
-      const workflowResponse = await fetch(
-        `${process.env.REACT_APP_API_URL}/v1/workflows/run`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            inputs: {
-              user_input_file: {
-                transfer_method: "local_file",
-                upload_file_id: uploadFileId,
-                type: "document",
-              },
-              part: "乙方",
-            },
-            response_mode: "streaming",
-            user: "abc-123",
-          }),
-        }
-      );
-
-      if (!workflowResponse.ok) {
-        throw new Error("工作流启动失败");
-      }
-
-      const reader = workflowResponse.body?.getReader();
-      if (!reader) {
-        throw new Error("无法读取工作流响应");
-      }
-
-      const decoder = new TextDecoder();
-      let done = false;
-      let result = "";
-
-      while (!done) {
-        const { value, done: doneReading } = await reader.read();
-        done = doneReading;
-        result += decoder.decode(value, { stream: true });
-      }
-
-      try {
-        const events = result.split("\n\n");
-        for (const event of events) {
-          if (event) {
-            const jsonString = event.replace(/^data:\s*/, "");
-            if (jsonString === '"ping"') {
-              continue;
-            }
-            try {
-              const eventJson = JSON.parse(jsonString);
-              const eventType = eventJson.event;
-              switch (eventType) {
-                case "workflow_started":
-                  console.log("工作流已启动");
-                  break;
-                case "node_started":
-                  break;
-                case "node_finished":
-                  break;
-                case "workflow_finished":
-                  if (eventJson.data.outputs) {
-                    console.log("-------workflow_finished outputs-----------");
-                    console.log(eventJson.data.outputs);
-                    const totalCheckOutput = eventJson.data.outputs.text;
-                    setTotalCheck(totalCheckOutput);
-                  }
-                  break;
-                case "ping":
-                  break;
-                default:
-                  console.log(`未知事件类型: ${event}`);
-              }
-            } catch (parseError) {
-              console.error("JSON 解析错误:", parseError);
-              continue;
-            }
-          }
-        }
-      } catch (error) {
-        console.error("处理工作流结果时发生错误:", error);
-        message.error("处理工作流结果时发生错误");
-      }
-
-      console.log("工作流结果:", result);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        message.error(error.message);
-      } else {
-        message.error("发生了未知错误");
-      }
+  const handleToolbarClick = (key: string) => {
+    setActiveTab(key);
+    // 处理工具栏点击事件
+    switch (key) {
+      case 'new':
+        // 实现新建功能
+        break;
+      case 'open':
+        // 实现打开功能
+        break;
+      case 'save':
+        // 实现保存功能
+        break;
+      // ... 其他工具栏项的处理
     }
   };
 
+  const commentMenuItems = [
+    {
+      key: 'insert',
+      icon: <PlusOutlined />,
+      label: '插入批注',
+    },
+    {
+      key: 'display',
+      icon: <MessageOutlined />,
+      label: '显示批注框',
+    },
+    {
+      key: 'panel',
+      icon: <AppstoreOutlined />,
+      label: '显示完整批注面板',
+    },
+  ];
+
+  const handleCommentMenuClick = ({ key }: { key: string }) => {
+    switch (key) {
+      case 'insert':
+        // 实现插入批注的逻辑
+                  break;
+      case 'display':
+        // 实现显示批注框的逻辑
+                  break;
+      case 'panel':
+        setShowComments(!showComments);
+                  break;
+    }
+  };
+
+  const handleAddComment = (page: number, position: { x: number; y: number }) => {
+    setCurrentPage(page);
+    setIsCommentModalVisible(true);
+    commentForm.setFieldsValue({ page, position });
+  };
+
+  const handleCommentSubmit = async () => {
+    try {
+      const values = await commentForm.validateFields();
+      const newComment: Comment = {
+        id: Date.now().toString(),
+        page: values.page,
+        content: values.content,
+        position: values.position,
+        createdAt: new Date(),
+      };
+      setComments([...comments, newComment]);
+      setIsCommentModalVisible(false);
+      commentForm.resetFields();
+      } catch (error) {
+      console.error('Failed to submit comment:', error);
+    }
+  };
+
+  // const handleAddAnnotation = (page: number, type: Annotation['type'], color: string, text: string, position: { x: number; y: number }) => {
+  //   const newAnnotation: Annotation = {
+  //     id: Date.now().toString(),
+  //     page,
+  //     type,
+  //     color,
+  //     text,
+  //     position,
+  //   };
+  //   setAnnotations([...annotations, newAnnotation]);
+  // };
+
+  const handleDeleteComment = (commentId: string) => {
+    // Delete the comment
+    setComments(comments.filter(comment => comment.id !== commentId));
+    handleDeleteAnnotation(commentId)
+    // Also delete any associated annotations
+    setAnnotations(annotations.filter(annotation => annotation.commentId !== commentId));
+  };
+
+  const handleDeleteAnnotation = (annotationId: string) => {
+    // Delete the annotation
+    setAnnotations(annotations.filter(annotation => annotation.id !== annotationId));
+    
+    // If this annotation was associated with a comment, also delete the comment
+    const annotationToDelete = annotations.find(a => a.id === annotationId);
+    if (annotationToDelete?.commentId) {
+      setComments(comments.filter(comment => comment.id !== annotationToDelete.commentId));
+    }
+  };
+
+  const renderToolbar = () => {
+    if (!pdfFile) return null;
+
+    return (
+      <>
+        {/* Header Tab Bar */}
+        <div style={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center", 
+          padding: "10px 20px",
+          marginBottom: "10px"
+        }}>
+          <div style={{ fontSize: "16px", fontWeight: "bold" }}>
+            {pdfFile.name}
+          </div>
+          <Button 
+            type="primary" 
+            icon={<DownloadOutlined />} 
+            onClick={handleDownload}
+          >
+            下载文档
+          </Button>
+        </div>
+
+        {/* Toolbar */}
+        <div style={{ 
+          display: "flex", 
+          gap: "10px",
+          padding: "10px",
+          borderBottom: "1px solid #f0f0f0",
+          marginBottom: "10px"
+        }}>
+          {toolbarItems.map(item => (
+            <Tooltip key={item.key} title={item.label}>
+              <Button
+                type={activeTab === item.key ? "primary" : "text"}
+                icon={item.icon}
+                onClick={() => handleToolbarClick(item.key)}
+              />
+            </Tooltip>
+          ))}
+          <div style={{ flex: 1 }} />
+          <Dropdown 
+            menu={{ 
+              items: commentMenuItems, 
+              onClick: handleCommentMenuClick 
+            }}
+            placement="bottomRight"
+          >
+            <Button icon={<CommentOutlined />}>
+              批注
+            </Button>
+          </Dropdown>
+        </div>
+      </>
+    );
+  };
+
+  const renderPdfContent = () => {
+    if (!pdfFile) return null;
+
+    return (
+      <div style={{ flex: 1, display: "flex", gap: "20px" }}>
+        {/* 左侧展示 PDF 内容 */}
+        <div
+          style={{
+            flex: 1,
+            marginRight: "20px",
+            borderRight: "1px solid #ccc",
+            paddingRight: "20px",
+            overflowY: "auto",
+          }}
+        >
+          <Document
+            file={pdfFile}
+            onLoadSuccess={onDocumentLoadSuccess}
+            onLoadError={(error) => console.error("加载 PDF 失败: ", error)}
+          >
+            {Array.from(new Array(numPages), (el, index) => (
+              <div key={`page_${index + 1}`} style={{ position: 'relative' }}>
+                <Page 
+                  pageNumber={index + 1}
+                  onClick={(e) => {
+                    const rect = e.currentTarget.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    const y = e.clientY - rect.top;
+                    handleAddComment(index + 1, { x, y });
+                  }}
+                />
+                {/* 渲染注释 */}
+                {comments
+                  .filter(comment => comment.page === index + 1)
+                  .map(comment => (
+                    <div
+                      key={comment.id}
+                      style={{
+                        position: 'absolute',
+                        left: comment.position.x,
+                        top: comment.position.y,
+                        background: '#fff',
+                        border: '1px solid #d9d9d9',
+                        borderRadius: '4px',
+                        padding: '8px',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                        <span>批注</span>
+                        <Button 
+                          type="text" 
+                          icon={<DeleteOutlined />}
+                          onClick={() => handleDeleteComment(comment.id)}
+                        />
+                      </div>
+                      <p>{comment.content}</p>
+                    </div>
+                  ))}
+                {/* 渲染标注 */}
+                {annotations
+                  .filter(annotation => annotation.page === index + 1)
+                  .map(annotation => (
+                    <div
+                      key={annotation.id}
+                      style={{
+                        position: 'absolute',
+                        left: annotation.position.x,
+                        top: annotation.position.y,
+                        background: annotation.color,
+                        opacity: 0.3,
+                        padding: '4px',
+                        borderRadius: '2px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      <span>{annotation.text}</span>
+                      <Button 
+                        type="text" 
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteAnnotation(annotation.id)}
+                        style={{ padding: '0 4px', height: 'auto' }}
+                      />
+                    </div>
+                  ))}
+              </div>
+            ))}
+          </Document>
+        </div>
+
+        {/* 右侧展示审核反馈信息和批注面板 */}
+        <div
+          style={{
+            flex: 1,
+            paddingLeft: "20px",
+            overflowY: "auto",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <h3>审核信息反馈</h3>
+          {totalCheck ? (
+            <div
+              style={{
+                whiteSpace: "pre-wrap",
+                wordWrap: "break-word",
+                overflowY: "auto",
+                flex: 1,
+              }}
+            >
+              <h4>总体审查</h4>
+              <ReactMarkdown>{totalCheck}</ReactMarkdown>
+            </div>
+          ) : (
+            <Skeleton active paragraph={{ rows: 10 }} />
+          )}
+
+          {/* 批注面板 */}
+          {showComments && (
+            <div style={{ 
+              marginTop: "20px",
+              borderTop: "1px solid #f0f0f0",
+              paddingTop: "20px"
+            }}>
+              <h3>批注列表</h3>
+              <List
+                dataSource={comments}
+                renderItem={comment => (
+                  <List.Item
+                    actions={[
+                      <Button 
+                        type="text" 
+                        icon={<DeleteOutlined />}
+                        onClick={() => handleDeleteComment(comment.id)}
+                      />
+                    ]}
+                  >
+                    <List.Item.Meta
+                      title={`第 ${comment.page} 页`}
+                      description={comment.content}
+                    />
+                  </List.Item>
+                )}
+              />
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
-    <div style={{ padding: "20px", width: "90vw" }}>
-      {!pdfFile && (
+    <div style={{ padding: "20px", width: "90vw", height: "100vh", display: "flex", flexDirection: "column" }}>
+      {renderToolbar()}
+      
+      {!pdfFile ? (
         <div
           style={{
             padding: "40px",
@@ -161,6 +483,7 @@ const PdfUploaderViewer = () => {
             justifyContent: "center",
             alignItems: "center",
             flexDirection: "column",
+            width: "100%",
           }}
         >
           <h1
@@ -229,78 +552,33 @@ const PdfUploaderViewer = () => {
             </Upload>
           </div>
         </div>
+      ) : (
+        renderPdfContent()
       )}
 
-      {pdfFile && (
-        <div
-          style={{
-            display: "flex",
-            marginTop: "20px",
-            height: "80vh",
-            justifyContent: "space-between",
-          }}
-        >
-          {/* 左侧展示 PDF 内容 */}
-          <div
-            style={{
-              flex: 1,
-              marginRight: "20px",
-              borderRight: "1px solid #ccc",
-              paddingRight: "20px",
-              overflowY: "auto",
-              // minWidth: "45%"
-            }}
+      {/* 批注添加模态框 */}
+      <Modal
+        title="添加批注"
+        open={isCommentModalVisible}
+        onOk={handleCommentSubmit}
+        onCancel={() => setIsCommentModalVisible(false)}
+      >
+        <Form form={commentForm} layout="vertical">
+          <Form.Item
+            name="content"
+            label="批注内容"
+            rules={[{ required: true, message: '请输入批注内容' }]}
           >
-            <h2>{pdfFile.name}</h2>
-            <Document
-              file={pdfFile}
-              onLoadSuccess={onDocumentLoadSuccess}
-              onLoadError={(error) => console.error("加载 PDF 失败: ", error)}
-            >
-              {Array.from(new Array(numPages), (el, index) => (
-                <Page key={`page_${index + 1}`} pageNumber={index + 1} />
-              ))}
-            </Document>
-          </div>
-
-          {/* 右侧展示审核反馈信息 */}
-          <div
-            style={{
-              flex: 1,
-              paddingLeft: "20px",
-              overflowY: "auto",
-              // minWidth: '45%'
-            }}
-          >
-            <h3>审核信息反馈</h3>
-            {totalCheck ? (
-              <div
-                style={{
-                  whiteSpace: "pre-wrap",
-                  wordWrap: "break-word",
-                  overflowY: "auto",
-                  height: "70vh",
-                }}
-              >
-                <h4>总体审查</h4>
-                <ReactMarkdown>{totalCheck}</ReactMarkdown>
-              </div>
-            ) : (
-              <Skeleton active paragraph={{ rows: 10 }} />
-            )}
-          </div>
-        </div>
-      )}
-
-      {pdfFile && (
-        <Button
-          type="primary"
-          onClick={startWorkflow}
-          style={{ marginTop: "20px" }}
-        >
-          启动工作流
-        </Button>
-      )}
+            <Input.TextArea rows={4} />
+          </Form.Item>
+          <Form.Item name="page" hidden>
+            <Input />
+          </Form.Item>
+          <Form.Item name="position" hidden>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 };
