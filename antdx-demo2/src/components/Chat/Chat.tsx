@@ -1,33 +1,23 @@
-// src/components/Chat/Chat.tsx
-import React from 'react';
-import { Space, Button, Badge } from 'antd';
-import {
-  PaperClipOutlined,
-  CloudUploadOutlined,
-  ShareAltOutlined,
-  EllipsisOutlined,
-} from '@ant-design/icons';
-import { Attachments, Welcome, Prompts, Sender } from '@ant-design/x';
-import { GetProp } from 'antd';
-import MessageList from './MessageList';
-import PromptsSection from './PromptsSection';
-import SenderSection from './SenderSection';
-import useChatStyles from './useChatStyles';
-import RenderTitle from '../common/RenderTitle';
+import React from "react";
+import { CloudUploadOutlined } from "@ant-design/icons";
+import { Attachments, Prompts, Sender } from "@ant-design/x";
+import { GetProp } from "antd";
+import MessageList from "./MessageList";
+import SenderSection from "./SenderSection";
+import useChatStyles from "./useChatStyles";
 
 interface ChatProps {
-  messages: any[]; // 根据实际类型定义
+  messages: any[];
   onRequest: (message: string) => void;
   content: string;
   setContent: (value: string) => void;
-  attachedFiles: GetProp<typeof Attachments, 'items'>;
+  attachedFiles: GetProp<typeof Attachments, "items">;
   headerOpen: boolean;
   setHeaderOpen: (open: boolean) => void;
-  handleFileChange: GetProp<typeof Attachments, 'onChange'>;
-  // senderPromptsItems: GetProp<typeof Prompts, 'items'>;
-  onPromptsItemClick: GetProp<typeof Prompts, 'onItemClick'>;
+  handleFileChange: GetProp<typeof Attachments, "onChange">;
+  onPromptsItemClick: GetProp<typeof Prompts, "onItemClick">;
   placeholderNode: React.ReactNode;
-  roles: any; // 根据实际类型定义
+  roles: any;
   loading: boolean;
 }
 
@@ -40,8 +30,6 @@ const Chat: React.FC<ChatProps> = ({
   headerOpen,
   setHeaderOpen,
   handleFileChange,
-  // senderPromptsItems,
-  onPromptsItemClick,
   placeholderNode,
   roles,
   loading,
@@ -50,16 +38,10 @@ const Chat: React.FC<ChatProps> = ({
 
   const items = messages.map(({ id, message, status }) => ({
     key: id,
-    loading: status === 'loading',
-    role: status === 'local' ? 'local' : 'ai',
+    loading: status === "loading",
+    role: status === "local" ? "local" : "ai",
     content: message,
   }));
-
-  // const attachmentsNode = (
-  //   <Badge dot={attachedFiles.length > 0 && !headerOpen}>
-  //     <Button type="text" icon={<PaperClipOutlined />} onClick={() => setHeaderOpen(!headerOpen)} />
-  //   </Badge>
-  // );
 
   const senderHeader = (
     <Sender.Header
@@ -77,12 +59,12 @@ const Chat: React.FC<ChatProps> = ({
         items={attachedFiles}
         onChange={handleFileChange}
         placeholder={(type) =>
-          type === 'drop'
-            ? { title: 'Drop file here' }
+          type === "drop"
+            ? { title: "Drop file here" }
             : {
                 icon: <CloudUploadOutlined />,
-                title: 'Upload files',
-                description: 'Click or drag files to this area to upload',
+                title: "Upload files",
+                description: "Click or drag files to this area to upload",
               }
         }
       />
@@ -92,7 +74,11 @@ const Chat: React.FC<ChatProps> = ({
   return (
     <div className={styles.chat}>
       {/* 🌟 消息列表 */}
-      <MessageList items={items} roles={roles} placeholderNode={placeholderNode} />
+      <MessageList
+        items={items}
+        roles={roles}
+        placeholderNode={placeholderNode}
+      />
       {/* 🌟 提示词 */}
       {/* <PromptsSection items={senderPromptsItems} onItemClick={onPromptsItemClick} /> */}
       {/* 🌟 输入框 */}
@@ -104,7 +90,6 @@ const Chat: React.FC<ChatProps> = ({
         headerOpen={headerOpen}
         setHeaderOpen={setHeaderOpen}
         handleFileChange={handleFileChange}
-        // attachmentsNode={attachmentsNode}
         senderHeader={senderHeader}
         loading={loading}
       />
